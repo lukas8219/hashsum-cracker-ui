@@ -1,3 +1,13 @@
-Update the hashsum cracker examples we implemented in this chapter and add the necessary logic to stop the computation on all nodes once a match has been found.
+#HashSum Cracker
 
-Casciaro, Mario; Mammino, Luciano. Node.js Design Patterns: Design and implement production-grade Node.js applications using proven patterns and techniques, 3rd Edition (pp. 612-614). Packt Publishing. Edição do Kindle. 
+We are distributing a CPU intensive task into multiple nodes and making it horizontally scale depending on the quantity of messages on a queue.
+
+The UI should:
+- Be able to monitor each Hash being cracked at real-time.
+- Be able to know much workers are being used for each processing hash
+- Be able to list all cracked Hashs
+
+The Backend should:
+- Horizontally scale depending on the amount of pending messages on the queue
+- Keep a State Machine from each step on the pipeline for the Hash.
+- Being able to properly route messages without overloading RabbitMQ with many queues.
