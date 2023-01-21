@@ -2,7 +2,7 @@
   "name": "13.7-worker-status-ui",
   "version": "1.0.0",
   "description": "Update the hashsum cracker examples we implemented in this chapter and add the necessary logic to stop the computation on all nodes once a match has been found.",
-  "main": "13.7-worker-status-ui.js",
+  "main": "./build/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -18,7 +18,16 @@
   },
   "homepage": "https://github.com/lukas8219/hashsum-cracker-ui#readme",
   "dependencies": {
+    "@types/node": "^18.11.18",
     "amqplib": "^0.10.3",
-    "indexed-string-variation": "^1.0.3"
+    "indexed-string-variation": "^1.0.3",
+    "nodemon": "^2.0.20",
+    "pino": "^8.8.0",
+    "tsc": "^2.0.4",
+    "typescript": "^4.9.4"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.1",
+    "ts-node": "^10.9.1"
   }
 }

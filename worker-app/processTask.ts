@@ -1,9 +1,12 @@
 import isv from 'indexed-string-variation'
 import { createHash } from 'crypto'
+import { LoggerFactory } from '../utils/logger';
 
-export async function processTask (task) {
+const logger = LoggerFactory.newLogger('process-task');
+
+export async function processTask (task : any) {
   const variationGen = isv.generator(task.alphabet)
-  console.log('Processing from ' +
+  logger.info('Processing from ' +
     `${variationGen(task.batchStart)} (${task.batchStart}) ` +
     `to ${variationGen(task.batchEnd)} (${task.batchEnd})`);
 
@@ -13,7 +16,7 @@ export async function processTask (task) {
     canceled = true;
   }
 
-  async function tryToMatchShaSum(index){
+  async function tryToMatchShaSum(index : number){
     const word = variationGen(index)
     const shasum = createHash('sha1')
     shasum.update(word)

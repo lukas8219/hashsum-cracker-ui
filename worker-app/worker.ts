@@ -1,5 +1,5 @@
 import amqp from 'amqplib'
-import { processTask } from './processTask.js'
+import { processTask } from './processTask'
 
 async function main () {
   const PID = process.pid;
@@ -11,24 +11,22 @@ async function main () {
   const cancelToSearchHash = new Map();
   await channel.prefetch(100);
 
-
   const { exchange }  = await channel.assertExchange('fanout-exchange', 'fanout');
-  await channel.bindQueue(broadcastQueue, exchange);
+  await channel.bindQueue(broadcastQueue, exchange, '*');
 
-  channel.consume(queue, async (rawMessage) => {
+  channel.consume(queue, async (rawMessage : any) => {
 
     const parsedMessage = JSON.parse(rawMessage.content.toString());
-    const { cancel, process } = await processTask(parsedMessage);
+    const { cancel, process: processFn} = await processTask(parsedMessage);
 
     cancelToSearchHash.set(parsedMessage.searchHash, cancel);
 
-    const found = await process();
+    const found = await processFn();
 
     if (found) {
       cancel();
       const buffer = Buffer.from(JSON.stringify({ workerPid: PID, source: parsedMessage.searchHash, result: found }))
-      channel.sendToQueue(resultQueue,
-        Buffer.from(JSON.stringify({ foundBy: PID, hash: parsedMessage.searchHash, result: found })))
+      channel.sendToQueue(resultQueue, Buffer.from(JSON.stringify({ foundBy: PID, hash: parsedMessage.searchHash, result: found })))
       channel.publish(exchange, `*_${process.pid}`, buffer);
       channel.purgeQueue(queue);
     }
@@ -36,7 +34,7 @@ async function main () {
     channel.ack(rawMessage)
   })
 
-  channel.consume(broadcastQueue, async (message) => {
+  channel.consume(broadcastQueue, async (message : any) => {
 
       const parsedMessage = JSON.parse(message.content.toString());
 
