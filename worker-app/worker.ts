@@ -1,4 +1,5 @@
-import amqp from 'amqplib'
+import amqp, { ConsumeMessage} from 'amqplib'
+import { HashSumTask } from '../types/message.type';
 import { processTask } from './processTask'
 
 async function main () {
@@ -14,9 +15,10 @@ async function main () {
   const { exchange }  = await channel.assertExchange('fanout-exchange', 'fanout');
   await channel.bindQueue(broadcastQueue, exchange, '*');
 
-  channel.consume(queue, async (rawMessage : any) => {
+  channel.consume(queue, async (rawMessage : ConsumeMessage | null) => {
+    if(!rawMessage) return;
 
-    const parsedMessage = JSON.parse(rawMessage.content.toString());
+    const parsedMessage : HashSumTask = JSON.parse(rawMessage.content.toString());
     const { cancel, process: processFn} = await processTask(parsedMessage);
 
     cancelToSearchHash.set(parsedMessage.searchHash, cancel);

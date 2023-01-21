@@ -1,10 +1,11 @@
 import isv from 'indexed-string-variation'
 import { createHash } from 'crypto'
 import { LoggerFactory } from '../utils/logger';
+import { HashSumTask } from '../types/message.type';
 
 const logger = LoggerFactory.newLogger('process-task');
 
-export async function processTask (task : any) {
+export async function processTask (task : HashSumTask) {
   const variationGen = isv.generator(task.alphabet)
   logger.info('Processing from ' +
     `${variationGen(task.batchStart)} (${task.batchStart}) ` +
