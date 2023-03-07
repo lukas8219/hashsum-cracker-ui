@@ -6,5 +6,6 @@ const controller = new HashSumController();
 const router = express.Router();
 
 router.post(`/hashSum`, controller.createCrackCommand);
+router.delete(`/hashSum/:searchHash`, controller.deleteCrack);
 
 export default router;

@@ -10,7 +10,7 @@ export default class HashSumCrackStartCommand extends Command {
     validate(): void {
        return;
     }
-    get queue(): string {
+    get queue(): QueueNames {
         return QueueNames.HASHSUM_CRACK_COMMAND;
     }
     
