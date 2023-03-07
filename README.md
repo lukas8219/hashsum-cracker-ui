@@ -22,3 +22,8 @@ Problem #1
  
  
  ### How to use WebSockets for high performance?
+
+### Next Steps
+- Add API Gateway for Rate Limiting (Need to choose one open-source)
+- Add UI (Probably NextJS)
+- Add REST API (Express/Fastify or NestJS)
