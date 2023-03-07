@@ -10,6 +10,8 @@ export abstract class Queue<REQ,RES> {
     private readonly logger = LoggerFactory.newLogger(`Queue`);
     private readonly client : AmqpClient;
 
+    //TODO implemenet Close method
+
     constructor(){
         this.client = new AmqpClient();
     }
@@ -20,7 +22,7 @@ export abstract class Queue<REQ,RES> {
            if(!message) return;
            try {
             const parsedMessage = this.amqpToMessage(message);
-            await this.handle(parsedMessage.content);
+            await this.handle(parsedMessage);
             if(parsedMessage.replyTo){
              //send to ReplyTo queue.
             }
@@ -31,18 +33,18 @@ export abstract class Queue<REQ,RES> {
         });
     }
 
-    async publish(message: REQ) : Promise<boolean> {
+    async publish(message: Message<REQ>) : Promise<boolean> {
         if(message instanceof Buffer){
             return this.client.publish(this.name, message);
         };
-        return this.client.publish(this.name, Buffer.from(JSON.stringify(message)));        
+        return this.client.publish(this.name, Buffer.from(JSON.stringify(message)), );        
     }
 
     private amqpToMessage(rawMessage : amqpMessage) : Message<REQ> {
         //TODO Maybe add validator middleware?
         const content = JSON.parse(rawMessage.content.toString());
         return {
-            content,
+            ...content,
             replyTo: rawMessage.properties.replyTo,
             correlationId: rawMessage.properties.correlationId,
         }

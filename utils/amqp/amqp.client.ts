@@ -58,14 +58,14 @@ export class AmqpClient {
         return this.channel.consume(queue, consumer);
     }
 
-    async publish(queueName : string, message : Buffer) : Promise<boolean> {
+    async publish(queueName : string, message : Buffer, opts : Options.Publish = {}) : Promise<boolean> {
         if(!this._isReady || !this.channel){
             return new Promise((res) => {
-                this._delayedPromises.push(async () => res(this.publish(queueName, message)));
+                this._delayedPromises.push(async () => res(this.publish(queueName, message, opts)));
             })
         }
         const { queue } = await this.assertQueue(queueName);
-        return this.channel.sendToQueue(queue, message);
+        return this.channel.sendToQueue(queue, message, opts);
     }
 
     private assertQueue(queueName : string, opts : Options.AssertQueue = {}) : Promise<Replies.AssertQueue>{
