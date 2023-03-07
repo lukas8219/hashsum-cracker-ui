@@ -1,56 +1,38 @@
-import amqp, { ConsumeMessage} from 'amqplib'
-import { HashSumTask } from '../types/message.type';
-import { processTask } from './processTask'
+import amqp, { ConsumeMessage } from 'amqplib'
+import { QueueNames } from '../commons/queues.js';
+import { HashSumTask } from '../types/message.type.js';
+import { WorkerPool } from './threadsPool/pool.js';
+
+const pool = new WorkerPool(8);
 
 async function main () {
   const PID = process.pid;
   const connection = await amqp.connect('amqp://localhost')
   const channel = await connection.createChannel()
-  const { queue } = await channel.assertQueue('tasks_queue')
-  const { queue: broadcastQueue } = await channel.assertQueue(`results_queue_${PID}`, { durable: false, autoDelete: true })
-  const { queue: resultQueue } = await channel.assertQueue(`results_queue`);
-  const cancelToSearchHash = new Map();
-  await channel.prefetch(100);
+  
+  const { queue: taskQueue } = await channel.assertQueue(QueueNames.TASK)
+  const { queue: resultQueue } = await channel.assertQueue(QueueNames.RESULT);
 
-  const { exchange }  = await channel.assertExchange('fanout-exchange', 'fanout');
-  await channel.bindQueue(broadcastQueue, exchange, '*');
+  await channel.prefetch(8);
 
-  channel.consume(queue, async (rawMessage : ConsumeMessage | null) => {
+  channel.consume(taskQueue, async (rawMessage : ConsumeMessage | null) => {
     if(!rawMessage) return;
-
     const parsedMessage : HashSumTask = JSON.parse(rawMessage.content.toString());
-    const { cancel, process: processFn} = await processTask(parsedMessage);
+    const found = await pool.acquire(parsedMessage);
 
-    cancelToSearchHash.set(parsedMessage.searchHash, cancel);
-
-    const found = await processFn();
-
-    if (found) {
-      cancel();
-      const buffer = Buffer.from(JSON.stringify({ workerPid: PID, source: parsedMessage.searchHash, result: found }))
-      channel.sendToQueue(resultQueue, Buffer.from(JSON.stringify({ foundBy: PID, hash: parsedMessage.searchHash, result: found })))
-      channel.publish(exchange, `*_${process.pid}`, buffer);
-      channel.purgeQueue(queue);
+    if(found && typeof found === 'string'){
+      const result = {
+        found,
+        PID,
+        foundAt: Date.now(),
+        end: parsedMessage.batchEnd,
+        start: parsedMessage.batchStart,
+      }
+      channel.sendToQueue(resultQueue, Buffer.from(JSON.stringify(result)));
     }
 
     channel.ack(rawMessage)
   })
-
-  channel.consume(broadcastQueue, async (message : any) => {
-
-      const parsedMessage = JSON.parse(message.content.toString());
-
-      if(parsedMessage.workerPid === process.pid){
-        channel.ack(message);
-        return;
-      }
-
-      cancelToSearchHash.get(parsedMessage.source)();
-  
-      channel.ack(message);
-    })
-
-
   }
 
 main().catch(err => console.error(err))

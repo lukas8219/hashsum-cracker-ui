@@ -12,6 +12,9 @@ The Backend should:
 - Keep a State Machine from each step on the pipeline for the Hash.
 - Being able to properly route messages without overloading RabbitMQ with many queues.
 
+
+#publish is way slower than reading <- > we can stop here.
+
 # Solution 1
 
 - Create 85(or N) queues.
