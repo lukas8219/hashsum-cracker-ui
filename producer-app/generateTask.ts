@@ -14,6 +14,9 @@ export class HashSumTaskGenerator {
   ){}
 
   async *[Symbol.asyncIterator]() : AsyncGenerator<HashSumTask, void, void> {
+
+    this.LOGGER.info(JSON.stringify(this));
+
     let nVariations = 0
     for (let n = 1; n <= this.maxWordLength; n++) {
       nVariations += Math.pow(this.alphabet.length, n)

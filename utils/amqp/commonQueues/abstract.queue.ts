@@ -7,10 +7,8 @@ import { LoggerFactory } from "../../logger/index.js";
 export abstract class Queue<REQ,RES> {
 
     //TODO improve how we log things.
-    private readonly logger = LoggerFactory.newLogger(`Queue`);
+    private readonly logger = LoggerFactory.newLogger(this.constructor['name']);
     private readonly client : AmqpClient;
-
-    //TODO implemenet Close method
 
     constructor(){
         this.client = new AmqpClient();

@@ -5,7 +5,7 @@ const logger = LoggerFactory.newLogger('index.ts');
 
 async function main () {
   const queue = new HashSumTaskResultQueue();
-  queue.consume();
+  await queue.consume();
   logger.info(`listening to ${queue.name}`);
 }
 

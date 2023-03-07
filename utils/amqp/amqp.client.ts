@@ -18,7 +18,7 @@ export class AmqpClient {
     private async _connect() : Promise<void> {
         this.connection = await amqp.connect(`amqp://localhost`);
         this.channel = await this.connection.createChannel();
-        this.channel.prefetch(1);
+        this.channel.prefetch(Number(process.env.PREFETCH_COUNT_RMQ) || 1);
         this._isReady = true;
         await this._processAllDelayedPromises();
     }

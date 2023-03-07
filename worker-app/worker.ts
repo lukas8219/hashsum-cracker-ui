@@ -4,6 +4,7 @@ import { HashSumTaskResultQueue } from "../utils/amqp/commonQueues/hashsum.task.
 import { WorkerPool } from "./threadsPool/pool.js";
 
 async function main() {
+  const queue = new HashSumTaskResultQueue();
   const pool = new WorkerPool(8);
 
   new HashSumTaskQueue()
@@ -12,7 +13,7 @@ async function main() {
       const found = await pool.acquire(message);
 
       if (found && typeof found === "string") {
-        
+
         const result = {
           found,
           PID,
@@ -21,7 +22,7 @@ async function main() {
           start: message.batchStart,
         };
 
-        await new HashSumTaskResultQueue().publish(result);
+        await queue.publish(result);
       }
     })
     .consume();
