@@ -26,9 +26,8 @@ export abstract class Queue<REQ,RES> {
             }
             this.client.acknowledge(message);
            } catch(err){
-            
+            this.client.reject(message);
            }
-           
         });
     }
 
@@ -49,7 +48,14 @@ export abstract class Queue<REQ,RES> {
         }
     }
 
-    abstract handle(message : REQ) : Promise<RES>;
+    withHandler(handler : (message : REQ) => Promise<RES>) : this {
+        this.handle = handler.bind(this);
+        return this;
+    }
+
+    public async handle(message : REQ) : Promise<RES | undefined> {
+        throw new Error('Not implemented. If need, either override or call withHandler');
+    }
 
     abstract get name(): QueueNames;
 
