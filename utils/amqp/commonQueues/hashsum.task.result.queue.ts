@@ -7,7 +7,7 @@ export class HashSumTaskResultQueue extends Queue<any, any> {
         throw new Error("Method not implemented.");
     }
     get name(): QueueNames {
-        throw new Error("Method not implemented.");
+       return QueueNames.RESULT;
     }
 
 }

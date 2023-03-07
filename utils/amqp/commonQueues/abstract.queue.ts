@@ -6,9 +6,13 @@ import { LoggerFactory } from "../../logger/index.js";
 
 export abstract class Queue<REQ,RES> {
 
+    //TODO improve how we log things.
     private readonly logger = LoggerFactory.newLogger(`Queue`);
+    private readonly client : AmqpClient;
 
-    constructor(private readonly client : AmqpClient){}
+    constructor(){
+        this.client = new AmqpClient();
+    }
 
     consume() {
         return this.client.consume(this.name, async (message : amqpMessage | null) => {
@@ -28,7 +32,7 @@ export abstract class Queue<REQ,RES> {
         });
     }
 
-    async publish<T extends Message<T>>(message: T) : Promise<boolean> {
+    async publish(message: REQ) : Promise<boolean> {
         if(message instanceof Buffer){
             return this.client.publish(this.name, message);
         };

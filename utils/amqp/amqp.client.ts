@@ -1,27 +1,79 @@
-import { Channel, Message, Replies, Options } from 'amqplib';
+import amqp, { Channel, Message, Replies, Options, Connection } from 'amqplib';
+import { Readable } from 'stream';
+
+type ArrayOfPromises<T> =  (() => Promise<T>)[]
 
 export class AmqpClient {
 
-    constructor(private readonly channel : Channel){}
+    private connection : Connection | undefined;
+    private channel : Channel | undefined;
+    private _isReady : boolean = false;
 
-    acknowledge<T>(message : Message) :void {
+    private _delayedPromises : ArrayOfPromises<any> = [];
+
+    constructor(){
+        this._connect();
+    }
+
+    private async _connect() : Promise<void> {
+        this.connection = await amqp.connect(`amqp://localhost`);
+        this.channel = await this.connection.createChannel();
+        this.channel.prefetch(1);
+        this._isReady = true;
+        await this._processAllDelayedPromises();
+    }
+
+    private async _processAllDelayedPromises() {
+        for await(const promise of Readable.from(this._delayedPromises)){
+            await promise();
+        }
+    }
+
+    async acknowledge<T>(message : Message) : Promise<void> {
+        if(!this._isReady || !this.channel){
+            return new Promise((res) => {
+                this._delayedPromises.push(async () => res(this.acknowledge(message)));
+            })
+        }
         return this.channel.ack(message);
     }
-    reject<T>(message : Message) : void {
+
+    async reject(message : Message) : Promise<void> {
+        if(!this._isReady || !this.channel){
+            return new Promise((res) => {
+                this._delayedPromises.push(async () => res(this.reject(message)));
+            })
+        }
+
         return this.channel.nack(message);
     }
 
-    async consume<T> (queueName : string, consumer : (message : Message | null) => void) : Promise<Replies.Consume> {
+    async consume(queueName : string, consumer : (message : Message | null) => void) : Promise<Replies.Consume> {
+        if(!this._isReady || !this.channel){
+            return new Promise((res) => {
+                this._delayedPromises.push(async () => res(this.consume(queueName, consumer)));
+            })
+        }
         const { queue } = await this.assertQueue(queueName);
         return this.channel.consume(queue, consumer);
     }
 
-    async publish<T> (queueName : string, message : Buffer) : Promise<boolean> {
+    async publish(queueName : string, message : Buffer) : Promise<boolean> {
+        if(!this._isReady || !this.channel){
+            return new Promise((res) => {
+                this._delayedPromises.push(async () => res(this.publish(queueName, message)));
+            })
+        }
         const { queue } = await this.assertQueue(queueName);
         return this.channel.sendToQueue(queue, message);
     }
 
-    assertQueue(queueName : string, opts : Options.AssertQueue = {}) : Promise<Replies.AssertQueue>{
+    private assertQueue(queueName : string, opts : Options.AssertQueue = {}) : Promise<Replies.AssertQueue>{
+        if(!this._isReady || !this.channel){
+            return new Promise((res) => {
+                this._delayedPromises.push(async () => res(this.assertQueue(queueName, opts)));
+            })
+        }
         return this.channel.assertQueue(queueName, opts)
     }
 }

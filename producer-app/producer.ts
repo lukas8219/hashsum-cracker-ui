@@ -15,10 +15,7 @@ async function main () {
   const channel = await connection.createConfirmChannel();
   const { queue } = await channel.assertQueue(QueueNames.TASK,  { durable: true });
 
-  for await (const task of new HashSumTaskGenerator(searchHash, ALPHABET, Number(maxLength), BATCH_SIZE)) {
-    logger.info({ searchHash: task.searchHash }, 'posting message to', { queueName: QueueNames.TASK, replyTo: QueueNames.RESULT });
-    await channel.sendToQueue(queue, Buffer.from(JSON.stringify(task)), { replyTo: QueueNames.RESULT });
-  }
+  
 
   await channel.waitForConfirms()
   await channel.close()
