@@ -28,9 +28,12 @@ export class HashSumTaskGenerator {
     let batchStart = 1
     let count = 0;
     
-    //TODO improve this write logic.
-    //maybe use divide and conquer strategy.
-    //Divide in 4 parts and iterate over all.
+
+    //TODO maybe create a Redis logic to fetch the below objects.
+    //fetch, Check if canceled
+    //If not canceled, proccess job.
+    //If canceled, bail out and remove key from Redis.
+
     while (batchStart <= nVariations && !(await Store.isCanceled(this.searchHash))) {
       const batchEnd = Math.min(
         batchStart + this.batchSize - 1, nVariations)
