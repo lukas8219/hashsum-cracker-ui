@@ -1,17 +1,20 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { randomBytes } from "crypto";
 import { LoggerFactory } from "../../utils/logger/index.js";
+import { HashSumService } from "../../utils/redis/stats.js";
 
 export default function listen(server : any){
 
     const currentServer = new WebSocketServer({ server });
     const allClientsMap = new Map<string, WebSocket>();
     const logger = LoggerFactory.newLogger('websocket');
+    const service = new HashSumService();
 
-    setInterval(() => {
-        //const data = { totalVariations: 20_000, totalTries: 10_312, searchHash: 'daksofks' }
+    setInterval(async () => {
+        const stats = await service.allStats();
+
         for(const client of allClientsMap.values()){
-            client.send(JSON.stringify({ data: 'Hello guys' }));
+            client.send(JSON.stringify(stats));
         }
     }, 3 * 1000);
 
