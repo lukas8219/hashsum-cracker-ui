@@ -20,7 +20,9 @@
   },
   "homepage": "https://github.com/lukas8219/hashsum-cracker-ui#readme",
   "dependencies": {
+    "@types/async-exit-hook": "^2.0.0",
     "amqplib": "^0.10.3",
+    "async-exit-hook": "^2.0.1",
     "express": "^4.18.2",
     "indexed-string-variation": "^1.0.3",
     "ioredis": "^5.3.1",

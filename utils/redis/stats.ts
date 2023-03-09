@@ -1,4 +1,4 @@
-import ioredis from 'ioredis';
+import ioredis, { Redis } from 'ioredis';
 import { hostname  } from 'os';
 
 //@ts-ignore
@@ -34,21 +34,20 @@ return cjson.encode(dict);
 
 export class HashSumService {
 
-    private readonly client = redis;
+    private readonly client : Redis = redis;
     private readonly allUsedHashSums = new Set<string>();
 
     constructor(){
-        this.listenToExitEvents();
     }
     
-    async assignWorker(hashSum : string){
+    async assignWorker(hashSum : string, worker: string){
         this.allUsedHashSums.add(hashSum);
-        return !!(await this.client.sadd(buildKey(hashSum), this.worker));
+        return !!(await this.client.sadd(buildKey(hashSum), worker));
     }
 
-    async removeWorker(hashSum: string){
+    async removeWorker(hashSum: string, worker : string){
         this.allUsedHashSums.delete(hashSum);
-        return !!(await this.client.srem(buildKey(hashSum), this.worker));
+        return !!(await this.client.srem(buildKey(hashSum), worker));
     }
 
     async stats(hashSum : string) {
@@ -60,32 +59,13 @@ export class HashSumService {
         return JSON.parse(objectAsString);
     }
 
-    private cleanUpWorkers() : void {
-        console.log(`heyyyy`);
+    async cleanUpWorkers(threadIdentifiers : string[]){
         for(const hashSum of this.allUsedHashSums){
-            this.client.srem(buildKey(hashSum), this.worker);
+            await this.client.srem(buildKey(hashSum), threadIdentifiers);
         }
     }
 
-    private listenToExitEvents(){
-        [`exit`, `SIGINT`, `SIGUSR1`, `SIGUSR2`, `uncaughtException`, `SIGTERM`].forEach((eventType) => {
-            process.on(eventType, this.cleanUpWorkers.bind(this));
-          })
-    }
-
-    private get worker() : WorkerId {
-        return `${hostname()}:${process.pid}`
-    }
-
-
-
 }
-
-type Host = string;
-type PID = number;
-export type WorkerId = `${Host}:${PID}`
-
-
 export type HashSumStats = {
     totalVariations : number;
     currentBatch: number;

@@ -4,10 +4,8 @@ import { LoggerFactory } from "../../utils/logger/index.js";
 import { HashSumTask } from "../../types/message.type.js";
 import { Store } from "../../utils/redis/client.js";
 import { parentPort } from "worker_threads";
-import { HashSumService } from "../../utils/redis/stats.js";
 
 const logger = LoggerFactory.newLogger("process-task");
-const hashSumService = new HashSumService()
 
 async function processTask(task: HashSumTask) {
   const variationGen = generator(task.alphabet);
@@ -40,24 +38,13 @@ async function processTask(task: HashSumTask) {
     return false;
   };
 
-  const processFnWrapper = async () => {
-    //Find a way to remove worker from Redis when dead
-    //This script is running inside a worker thread. assiging process.on will not work.
-    await hashSumService.assignWorker(task.searchHash);
-    const found = await processFn();
-    await hashSumService.removeWorker(task.searchHash);
-    return found;
-  }
-
   return {
-    process: processFnWrapper,
+    process: processFn,
   };
 }
 
 
 parentPort?.on('message', async (hashSum : HashSumTask) => {
-  const { process } = await processTask(hashSum);
-  parentPort?.postMessage(await process());
+  const { process: processFn } = await processTask(hashSum);
+  parentPort?.postMessage(await processFn());
 })
-
-parentPort?.on('close', () => console.log(`closing worker thread`));
