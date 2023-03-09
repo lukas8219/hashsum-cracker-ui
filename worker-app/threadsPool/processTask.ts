@@ -16,35 +16,36 @@ async function processTask(task: HashSumTask) {
   );
 
   async function tryToMatchShaSum(index: number) {
-    const word : string = variationGen(index);
+    const word = variationGen(index);
     const shasum = createHash("sha1");
     shasum.update(word);
     return { word, digest: shasum.digest("hex") };
   }
 
-  const processFn = async (): Promise<boolean | string> => {
-    
+  const process = async (): Promise<boolean | string> => {
     for (let idx = task.batchStart; idx <= task.batchEnd; idx++) {
       if (await Store.isCanceled(task.searchHash)) {
         logger.info(`operation cancelled or finished`);
         return true;
       }
       const { digest, word } = await tryToMatchShaSum(idx);
+
       if (digest === task.searchHash) {
         await Store.cancel(task.searchHash);
-        return word;
+        return word as string;
       }
     }
+
     return false;
   };
 
   return {
-    process: processFn,
+    process,
   };
 }
 
 
 parentPort?.on('message', async (hashSum : HashSumTask) => {
-  const { process: processFn } = await processTask(hashSum);
-  parentPort?.postMessage(await processFn());
+  const { process } = await processTask(hashSum);
+  parentPort?.postMessage(await process());
 })
